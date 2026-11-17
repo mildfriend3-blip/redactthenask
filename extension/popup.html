@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>RedactThenAsk</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <header class="popup-header">
+      <div class="shield-icon">🛡️</div>
+      <div class="header-titles">
+        <h2>RedactThenAsk</h2>
+        <p>AI Privacy Firewall</p>
+      </div>
+    </header>
+
+    <div class="status-box">
+      <span>Vault Items: <strong id="vault-count">0</strong></span>
+      <span class="active-badge">Active</span>
+    </div>
+
+    <div class="policy-group">
+      <label for="policy-select">Redaction Policy:</label>
+      <select id="policy-select">
+        <option value="HIPAA_CLINICAL">HIPAA Safe Harbor (Healthcare)</option>
+        <option value="LEGAL_CONTRACT">Executive & Legal Contract</option>
+        <option value="FINANCIAL_PAYROLL">Financial & Paystub</option>
+        <option value="MAX_PARANOIA_GDPR">Zero-Trust GDPR Maximum</option>
+      </select>
+    </div>
+
+    <div class="actions-group">
+      <button class="btn btn-primary" id="btn-redact-clipboard">
+        <span>🛡️</span> Redact Clipboard &amp; Copy Safe Text
+      </button>
+
+      <button class="btn btn-secondary" id="btn-rehydrate-clipboard">
+        <span>✨</span> Re-hydrate Answer from Clipboard
+      </button>
+
+      <button class="btn btn-danger" id="btn-clear-vault">
+        <span>🗑️</span> Clear Local Vault
+      </button>
+    </div>
+
+    <div class="output-preview" id="preview-box">
+      <div id="preview-text">Ready to sanitize clipboard...</div>
+    </div>
+
+    <footer class="popup-footer">
+      <span>Nothing identifiable leaves your browser.</span>
+    </footer>
+  </div>
+
+  <script src="core/vault.js"></script>
+  <script src="core/policy.js"></script>
+  <script src="core/redactor.js"></script>
+  <script src="core/rehydrator.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

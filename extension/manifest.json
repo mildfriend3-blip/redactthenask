@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "RedactThenAsk — Privacy Firewall for AI",
+  "version": "1.0.0",
+  "description": "On-device entity redaction and local re-hydration for ChatGPT, Claude, and Gemini. Nothing identifiable ever leaves your device.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "clipboardWrite",
+    "clipboardRead"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "RedactThenAsk Privacy Firewall"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://claude.ai/*",
+        "https://gemini.google.com/*",
+        "http://localhost:*/*",
+        "http://127.0.0.1:*/*"
+      ],
+      "js": [
+        "core/vault.js",
+        "core/policy.js",
+        "core/redactor.js",
+        "core/rehydrator.js",
+        "content.js"
+      ],
+      "css": [
+        "content.css"
+      ]
+    }
+  ]
+}

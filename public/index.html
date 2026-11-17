@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RedactThenAsk — A Privacy Firewall for AI</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="logo-section">
+        <div class="logo-shield">🛡️</div>
+        <div class="logo-text">
+          <h1>RedactThenAsk</h1>
+          <p>A Privacy Firewall for AI &bull; Hybrid On-Device / Cloud Split</p>
+        </div>
+      </div>
+
+      <!-- Firebase Integration Status Indicators -->
+      <div class="firebase-status-bar">
+        <div class="status-pill active" title="AI Logic runs in dual-mode: On-Device sanitization & Cloud reasoning">
+          <span class="status-dot"></span>
+          <span>Firebase AI Logic: <strong>Dual-Mode</strong></span>
+        </div>
+        <div class="status-pill active" id="appcheck-pill" title="Hardware/Attestation Verified App Check Token">
+          <span class="status-dot"></span>
+          <span>App Check: <strong>Attested</strong></span>
+        </div>
+        <div class="status-pill active" title="Token Vault strictly isolated on client device; zero cloud egress">
+          <span class="status-dot"></span>
+          <span>Firestore Vault: <strong>Local-Only</strong></span>
+        </div>
+        <div class="status-pill active" id="remoteconfig-pill" title="Dynamic redaction rules managed by Firebase Remote Config">
+          <span class="status-dot"></span>
+          <span>Remote Config: <strong id="remoteconfig-version">v2.4.0</strong></span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn-secondary" id="btn-settings">⚙️ Settings</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Body -->
+  <main class="main-wrapper">
+
+    <!-- Preset Document Selector -->
+    <div class="preset-bar">
+      <div class="preset-title">
+        <span>⚡ Quick Test Presets:</span>
+      </div>
+      <div class="preset-buttons">
+        <button class="preset-btn active" data-preset="medical">
+          <span>🏥</span> Medical / Oncology (HIPAA)
+        </button>
+        <button class="preset-btn" data-preset="legal">
+          <span>📄</span> Executive Contract (Legal)
+        </button>
+        <button class="preset-btn" data-preset="payroll">
+          <span>💰</span> Paystub & Banking (Financial)
+        </button>
+        <button class="preset-btn" data-preset="clear">
+          <span>✍️</span> Blank Custom Document
+        </button>
+      </div>
+    </div>
+
+    <!-- 4-Stage Architectural Pipeline -->
+    <section class="pipeline-visualizer">
+      <div class="pipeline-header">Architectural Firewall Pipeline (Hybrid Split)</div>
+      <div class="pipeline-nodes">
+        <div class="pipeline-node" id="stage-1">
+          <div class="node-title"><span>1.</span> On-Device Redactor</div>
+          <div class="node-desc">Entities swapped for structured tokens</div>
+          <span class="node-badge badge-client">CLIENT-SIDE</span>
+        </div>
+        <div class="node-arrow">&rarr;</div>
+        <div class="pipeline-node" id="stage-2">
+          <div class="node-title"><span>2.</span> Local Token Vault</div>
+          <div class="node-desc">Cryptographic keys held in memory/cache</div>
+          <span class="node-badge badge-client">NEVER LEAVES DEVICE</span>
+        </div>
+        <div class="node-arrow">&rarr;</div>
+        <div class="pipeline-node" id="stage-3">
+          <div class="node-title"><span>3.</span> Cloud AI Reasoning</div>
+          <div class="node-desc">Frontier model analyzes safe text</div>
+          <span class="node-badge badge-cloud">SANITIZED WIRE PAYLOAD</span>
+        </div>
+        <div class="node-arrow">&rarr;</div>
+        <div class="pipeline-node" id="stage-4">
+          <div class="node-title"><span>4.</span> On-Device Rehydrator</div>
+          <div class="node-desc">Original entities restored in final view</div>
+          <span class="node-badge badge-client">CLIENT-SIDE</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Interactive Workspace Grid -->
+    <div class="app-grid">
+
+      <!-- Left Column: Sensitive Document & Prompt -->
+      <section class="input-panel">
+        <div class="panel-card">
+          <div class="card-title-row">
+            <span class="card-title">📝 Sensitive Document (Pasted by User)</span>
+            <span class="pii-counter" id="pii-counter-badge">Detecting PII...</span>
+          </div>
+          <div class="editor-wrapper">
+            <textarea id="document-input" class="doc-textarea" placeholder="Paste sensitive medical records, contracts, bank statements, or confidential notes here..."></textarea>
+          </div>
+
+          <div class="card-title-row">
+            <span class="card-title">❓ Question for AI</span>
+          </div>
+          <textarea id="prompt-input" class="prompt-textarea" placeholder="What do you want the AI to analyze or summarize?"></textarea>
+
+          <div class="policy-selector-row">
+            <label for="policy-select" style="font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap;">🛡️ Redaction Policy:</label>
+            <select id="policy-select" class="policy-select">
+              <option value="HIPAA_CLINICAL">HIPAA Safe Harbor (Healthcare PHI)</option>
+              <option value="LEGAL_CONTRACT">Executive & Legal Contracts</option>
+              <option value="FINANCIAL_PAYROLL">Financial Paystub & Banking</option>
+              <option value="MAX_PARANOIA_GDPR">Zero-Trust GDPR Maximum Shield</option>
+            </select>
+          </div>
+
+          <button id="btn-run-firewall" class="btn-firewall">
+            <span>🛡️</span> Run Privacy Firewall &amp; Ask AI
+          </button>
+        </div>
+      </section>
+
+      <!-- Right Column: Outputs & Live Proof -->
+      <section class="output-panel">
+        <nav class="tabs-nav">
+          <button class="nav-tab active" data-tab="hydrated-view">🎯 Re-hydrated Answer</button>
+          <button class="nav-tab" data-tab="devtools-view">🌐 DevTools Network Proof</button>
+          <button class="nav-tab" data-tab="vault-view">🔐 Local Token Vault (<span id="vault-count-tab">0</span>)</button>
+          <button class="nav-tab" data-tab="diff-view">⚖️ Wire Diff</button>
+        </nav>
+
+        <!-- Tab 1: Hydrated Answer -->
+        <div class="tab-pane active" id="tab-hydrated-view">
+          <div class="result-card">
+            <div class="result-toolbar">
+              <div class="view-status">
+                <span id="ai-model-tag" style="color: #c084fc; font-weight: 600;">Ready</span>
+              </div>
+              <label class="toggle-label">
+                <input type="checkbox" id="toggle-highlights" checked>
+                <span>Highlight Re-hydrated Entities</span>
+              </label>
+            </div>
+            <div class="result-body" id="hydrated-output">
+              <p style="color: var(--text-muted); font-style: italic;">
+                Click "Run Privacy Firewall & Ask AI" to execute the hybrid split.
+                Your sensitive document will be sanitized on this device, the cloud will reason over anonymous tokens, and the real names will be restored locally right here.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Live DevTools Inspector -->
+        <div class="tab-pane" id="tab-devtools-view">
+          <div class="result-card" style="padding: 0;">
+            <div id="devtools-container">
+              <div style="padding: 2rem; text-align: center; color: var(--text-muted);">
+                <p>Run the firewall to inspect the real-time network payload.</p>
+                <p style="font-size: 0.8rem; margin-top: 0.5rem;">
+                  You can also press <strong>F12</strong> in your browser and check the Network tab for <code>/api/reason</code> &mdash; only redacted tokens hit the wire!
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Local Token Vault Inspector -->
+        <div class="tab-pane" id="tab-vault-view">
+          <div class="result-card">
+            <div class="result-toolbar">
+              <span style="color: #34d399; font-weight: 600;">Client-Isolated Memory / Firestore Local Cache</span>
+              <span style="color: var(--text-muted);" id="vault-isolation-status">Status: 🔒 Strictly Local</span>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="vault-table">
+                <thead>
+                  <tr>
+                    <th>Surrogate Token</th>
+                    <th>Classification</th>
+                    <th>Original Secret (Client Vault)</th>
+                    <th>Occurrences</th>
+                  </tr>
+                </thead>
+                <tbody id="vault-table-body">
+                  <tr>
+                    <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+                      No tokens generated yet. Run the firewall to populate the local vault.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: Wire Diff -->
+        <div class="tab-pane" id="tab-diff-view">
+          <div class="result-card">
+            <div class="diff-container">
+              <div class="diff-col">
+                <h4>1. What Stays on Device (Original)</h4>
+                <pre class="code-block" id="diff-original" style="font-size: 0.75rem; height: 380px;">Paste text to compare.</pre>
+              </div>
+              <div class="diff-col">
+                <h4>2. What Leaves the Device (Sanitized Wire Payload)</h4>
+                <pre class="code-block" id="diff-sanitized" style="font-size: 0.75rem; height: 380px;">Run firewall to view sanitized payload.</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </div>
+
+    <!-- Chrome Extension Banner -->
+    <aside class="extension-ribbon">
+      <div class="ribbon-info">
+        <div class="ribbon-icon">🧩</div>
+        <div class="ribbon-text">
+          <h4>RedactThenAsk Chrome Extension Included</h4>
+          <p>Protect yourself when pasting into ChatGPT, Claude, and Gemini with our Manifest V3 extension in <code>extension/</code>.</p>
+        </div>
+      </div>
+      <div>
+        <button class="btn-secondary" id="btn-extension-info">How to Load in Chrome &rarr;</button>
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settings-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 style="font-size: 1.1rem; font-weight: 600;">⚙️ RedactThenAsk Settings</h3>
+        <button class="modal-close" id="modal-close">&times;</button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+        <div>
+          <label style="font-size: 0.8rem; color: var(--text-secondary); display: block; margin-bottom: 0.3rem;">
+            Google Gemini API Key (Optional):
+          </label>
+          <input type="password" id="input-api-key" class="input-field" placeholder="AIzaSy... (Leave empty to use built-in simulator)">
+          <p style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.3rem;">
+            If provided, the server routes tokenized queries to real <strong>Gemini 2.5 Flash</strong> via Google AI SDK. Otherwise, our zero-config simulated cloud reasoner runs seamlessly.
+          </p>
+        </div>
+        <div>
+          <label style="font-size: 0.8rem; color: var(--text-secondary); display: block; margin-bottom: 0.3rem;">
+            Firebase Remote Config Status:
+          </label>
+          <div style="background: #060911; padding: 0.6rem; border-radius: 6px; font-family: var(--font-mono); font-size: 0.75rem; color: #34d399;">
+            Active Version: v2.4.0 (Synchronized)
+          </div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem;">
+          <button class="btn-secondary" id="btn-save-settings">Save &amp; Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/vault.js"></script>
+  <script src="js/redactor.js"></script>
+  <script src="js/rehydrator.js"></script>
+  <script src="js/policy.js"></script>
+  <script src="js/app-check.js"></script>
+  <script src="js/presets.js"></script>
+  <script src="js/devtools-inspector.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

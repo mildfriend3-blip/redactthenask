@@ -166,7 +166,37 @@ src/pipeline.js    the four-step flow, chunking, the blocking leak gate
 src/vault.js       placeholder → original, in memory only
 src/samples.js     three synthetic documents for the demo
 src/main.js        UI wiring and the routing panel
+extension/         Chrome Extension (Manifest V3) for ChatGPT, Claude, and Gemini
+public/            Standalone Web UI with built-in DevTools & Live Network Inspector
+server.cjs         Express Cloud Gateway & Firebase AI Logic endpoint (/api/reason)
+tests/             Automated verification test suite (26/26 unit & integration tests)
 ```
+
+## 🧩 Chrome Extension (Manifest V3)
+
+The repository includes a ready-to-load Chrome Extension under [`extension/`](extension):
+
+1. Go to `chrome://extensions/` in Chrome.
+2. Toggle **Developer mode** to ON.
+3. Click **Load unpacked** and select the `extension/` folder.
+4. **Features:**
+   - **In-Page Floating Shield:** Automatically injects a privacy firewall shield on `chatgpt.com`, `claude.ai`, and `gemini.google.com` to sanitize inputs before submission.
+   - **Popup Clipboard Firewall:** One-click clipboard sanitization and one-click answer re-hydration.
+
+## 🧪 Automated Verification Suite
+
+Run the 26-point automated test suite anytime:
+
+```bash
+npm test
+```
+
+Verifies:
+- **HIPAA Safe Harbor PHI Sanitization:** Names, doctors, MRNs, DOBs, phone numbers, and emails purged; clinical metrics (blood sugar, HbA1c) preserved.
+- **Executive Contract & Financial Redaction:** Names, companies, base salaries ($385k), bonuses ($120k), SSNs, bank accounts purged; duration preserved.
+- **Local Re-hydration Roundtrip Fidelity:** 100% substitution accuracy restoring real names into cloud answers.
+- **Zero-PII Leak Audit:** Cryptographic verification that zero vault entities appear on the network wire.
+
 
 ## Design notes worth defending in the write-up
 

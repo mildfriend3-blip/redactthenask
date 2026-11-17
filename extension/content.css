@@ -1,0 +1,40 @@
+/* RedactThenAsk - In-Page Floating Badge Styles */
+
+.rta-floating-shield {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 999999;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.rta-shield-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 8px 14px;
+  border-radius: 24px;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  user-select: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.rta-shield-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+}
+
+.rta-shield-btn:active {
+  transform: translateY(0);
+}
+
+.rta-label {
+  font-size: 12px;
+  letter-spacing: 0.3px;
+}
