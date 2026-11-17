@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RedactThenAsk — ask anything, leak nothing</title>
+    <meta name="description" content="A privacy firewall for AI: redact on device, reason in the cloud, restore locally." />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <header class="top">
+      <div class="brand"><span class="mark"></span> RedactThenAsk</div>
+      <div class="badges">
+        <span class="badge" id="device-badge">checking device…</span>
+        <span class="badge ghost" id="auth-badge">auth: —</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="col">
+        <div class="field">
+          <div class="field-head">
+            <label for="doc">Your document</label>
+            <select id="sample" class="mini">
+              <option value="">load a sample…</option>
+            </select>
+          </div>
+          <textarea id="doc" spellcheck="false"
+            placeholder="Paste a lab report, a rental agreement, a salary slip — anything you would normally be afraid to paste into a chatbot."></textarea>
+          <div class="hint" id="doc-hint">Nothing here is sent anywhere until you press the button.</div>
+        </div>
+
+        <div class="field">
+          <label for="q">What do you want to know?</label>
+          <input id="q" type="text"
+            value="What are the main risks here, and what should I do next?" />
+        </div>
+
+        <div class="actions">
+          <button id="run" class="primary">Protect &amp; ask</button>
+          <button id="reset" class="ghost-btn">Clear</button>
+        </div>
+      </section>
+
+      <section class="col">
+        <ol class="steps" id="steps">
+          <li data-step="0"><span class="tick"></span><b>Redact</b><em>on device</em><p>—</p></li>
+          <li data-step="1"><span class="tick"></span><b>Leak gate</b><em>on device</em><p>—</p></li>
+          <li data-step="2"><span class="tick"></span><b>Reason</b><em>cloud</em><p>—</p></li>
+          <li data-step="3"><span class="tick"></span><b>Restore</b><em>on device</em><p>—</p></li>
+        </ol>
+
+        <div class="card" id="payload-card" hidden>
+          <div class="card-head">
+            <span>Exactly what left your device</span>
+            <button class="mini" id="toggle-payload">show</button>
+          </div>
+          <pre id="payload" class="mono"></pre>
+        </div>
+
+        <div class="card" id="answer-card" hidden>
+          <div class="card-head"><span>Answer</span><span class="badge ghost" id="answer-source">—</span></div>
+          <div id="answer" class="answer"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="panel">
+      <div class="stat"><span id="stat-device">0</span><label>on-device calls</label></div>
+      <div class="stat"><span id="stat-cloud">0</span><label>cloud calls</label></div>
+      <div class="stat"><span id="stat-unsent">0 B</span><label>never left the device</label></div>
+      <div class="stat"><span id="stat-latency">0 ms</span><label>total latency</label></div>
+      <div class="stat grow"><span id="stat-entities">0</span><label>identifiers protected</label></div>
+    </footer>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
