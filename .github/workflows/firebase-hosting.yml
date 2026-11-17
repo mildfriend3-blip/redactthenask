@@ -1,0 +1,53 @@
+name: Deploy to Firebase Hosting
+
+# Builds the Vite app and deploys it to Firebase Hosting on every push to main.
+#
+# Required repository secrets (Settings > Secrets and variables > Actions):
+#   FIREBASE_TOKEN            from `npx firebase-tools login:ci` locally
+#   VITE_FB_API_KEY           from Firebase console > Project settings > Your apps
+#   VITE_FB_AUTH_DOMAIN
+#   VITE_FB_PROJECT_ID
+#   VITE_FB_STORAGE_BUCKET
+#   VITE_FB_SENDER_ID
+#   VITE_FB_APP_ID
+#   VITE_RECAPTCHA_SITE_KEY   App Check reCAPTCHA v3 site key
+#
+# Without the Firebase secrets the build step fails on purpose rather than
+# deploying an app with an empty config.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install
+        run: npm install
+
+      - name: Build
+        env:
+          VITE_FB_API_KEY: ${{ secrets.VITE_FB_API_KEY }}
+          VITE_FB_AUTH_DOMAIN: ${{ secrets.VITE_FB_AUTH_DOMAIN }}
+          VITE_FB_PROJECT_ID: ${{ secrets.VITE_FB_PROJECT_ID }}
+          VITE_FB_STORAGE_BUCKET: ${{ secrets.VITE_FB_STORAGE_BUCKET }}
+          VITE_FB_SENDER_ID: ${{ secrets.VITE_FB_SENDER_ID }}
+          VITE_FB_APP_ID: ${{ secrets.VITE_FB_APP_ID }}
+          VITE_RECAPTCHA_SITE_KEY: ${{ secrets.VITE_RECAPTCHA_SITE_KEY }}
+        run: |
+          if [ -z "$VITE_FB_PROJECT_ID" ]; then
+            echo "::error::Firebase config secrets are not set. Add them under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          npm run build
+
+      - name: Deploy
+        run: npx --yes firebase-tools deploy --only hosting,firestore:rules --project "${{ secrets.VITE_FB_PROJECT_ID }}" --token "${{ secrets.FIREBASE_TOKEN }}"
