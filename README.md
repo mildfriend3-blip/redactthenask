@@ -83,6 +83,15 @@ it on trust.
 
 ## Run it
 
+The full console runbook, with a check after every step, is in
+**[SETUP.md](SETUP.md)**. When you think you are done, run the pre-flight:
+
+```bash
+npm run verify
+```
+
+It names the exact setup step that is still incomplete.
+
 ### 1. Prerequisites
 
 - Chrome **139+** on **desktop** (Windows, macOS, Linux or Chromebook Plus)
@@ -132,6 +141,7 @@ then add the printed token under **App Check → Apps → Manage debug tokens**.
 
 ```bash
 npm install
+npm run verify     # pre-flight: names any missing config
 npm run dev        # http://localhost:5173
 ```
 
