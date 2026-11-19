@@ -1,4 +1,5 @@
-import { deviceStatus, ensureDeviceModel, ensureSignedIn, refreshModels } from "./firebase.js";
+import { deviceStatus, ensureDeviceModel, ensureSignedIn, db, auth } from "./firebase.js";
+import { refreshModels } from "./models.js";
 import { runPipeline } from "./pipeline.js";
 import { SAMPLES } from "./samples.js";
 
@@ -16,6 +17,7 @@ const answerEl = $("answer");
 const answerSource = $("answer-source");
 
 let deviceOk = false;
+let activeConfig = { strictness: "standard" };
 
 // ---------- boot ---------------------------------------------------------
 (async function boot() {
@@ -40,7 +42,7 @@ let deviceOk = false;
   runBtn.disabled = !deviceOk;
 
   try {
-    await refreshModels();
+    activeConfig = await refreshModels();
   } catch { /* defaults are fine */ }
 
   const user = await ensureSignedIn();
@@ -112,10 +114,30 @@ runBtn.addEventListener("click", async () => {
   await ensureDeviceModel();
 
   try {
-    const result = await runPipeline({ text, question, onStep: setStep });
+    const result = await runPipeline({
+      text,
+      question,
+      strictness: activeConfig?.strictness || "standard",
+      onStep: setStep
+    });
 
     highlightTokens(payloadEl, result.safeText);
     payloadCard.hidden = false;
+
+    // Persist only sanitized safeText to Firestore (never raw text, never vault)
+    if (auth.currentUser) {
+      try {
+        const { collection, addDoc, serverTimestamp } = await import("firebase/firestore");
+        await addDoc(collection(db, "users", auth.currentUser.uid, "redactedDocs"), {
+          safeText: result.safeText,
+          entityCount: result.entityCount,
+          redactSource: result.sources.redact,
+          createdAt: serverTimestamp()
+        });
+      } catch (saveErr) {
+        console.warn("[firestore] could not persist redacted doc:", saveErr.message);
+      }
+    }
 
     answerEl.textContent = result.answer;
     if (result.nextActions.length) {

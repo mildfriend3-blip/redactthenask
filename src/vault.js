@@ -16,6 +16,10 @@ export class Vault {
     }
   }
 
+  has(placeholder) {
+    return this.map.has(placeholder);
+  }
+
   // Restore longest tokens first so [[PERSON_10]] is never clobbered by
   // [[PERSON_1]].
   restore(text) {

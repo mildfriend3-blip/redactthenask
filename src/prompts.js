@@ -2,11 +2,14 @@
 // the two on-device prompts are short and literal because Gemini Nano is
 // small, the cloud prompt is allowed to reason.
 
-export function redactPrompt(doc) {
+export function redactPrompt(doc, strictness = "standard") {
+  const strictGuideline = strictness === "strict"
+    ? "Strict mode enabled: Also redact all specific dates, department/clinic names, and alphanumeric reference numbers.\n"
+    : "";
   return [
     "You are a local redaction engine. Rewrite the document so that no",
     "personally identifying information remains.",
-    "",
+    strictGuideline,
     "Replace every personal name, organisation name, phone number, email,",
     "street address, account or policy number, and date of birth with a",
     "placeholder of the form [[TYPE_N]], where TYPE is one of PERSON, ORG,",

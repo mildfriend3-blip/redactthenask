@@ -3,15 +3,29 @@
 import { getRedactor, getLeakChecker, getAnalyst } from "./models.js";
 import { Vault } from "./vault.js";
 import { redactPrompt, leakPrompt, analystPrompt } from "./prompts.js";
+import { patternRedact, scanPatternLeaks } from "./patterns.js";
 
-const CHUNK_CHARS = 3500;
+export const CHUNK_CHARS = 3500;
 
-function chunk(text, size = CHUNK_CHARS) {
+export function chunk(text, size = CHUNK_CHARS) {
+  if (!text) return [];
   if (text.length <= size) return [text];
   const paragraphs = text.split(/\n{2,}/);
+  const normalized = [];
+  for (const p of paragraphs) {
+    if (p.length <= size) {
+      normalized.push(p);
+    } else {
+      // Hard split any paragraph longer than the window
+      for (let i = 0; i < p.length; i += size) {
+        normalized.push(p.slice(i, i + size));
+      }
+    }
+  }
+
   const out = [];
   let cur = "";
-  for (const p of paragraphs) {
+  for (const p of normalized) {
     if (cur && (cur.length + p.length + 2) > size) {
       out.push(cur);
       cur = p;
@@ -23,31 +37,53 @@ function chunk(text, size = CHUNK_CHARS) {
   return out;
 }
 
-function parseJson(raw) {
+export function parseJson(raw) {
+  if (!raw || typeof raw !== "string") return null;
   try {
     return JSON.parse(raw);
   } catch {
     const start = raw.indexOf("{");
     const end = raw.lastIndexOf("}");
     if (start === -1 || end <= start) return null;
-    try { return JSON.parse(raw.slice(start, end + 1)); } catch { return null; }
+    try {
+      return JSON.parse(raw.slice(start, end + 1));
+    } catch {
+      return null;
+    }
   }
 }
 
-export async function runPipeline({ text, question, onStep }) {
+export function evaluateGate(gateResult) {
+  if (!gateResult || typeof gateResult !== "object") {
+    return { passed: false, leaks: ["unparseable gate response"] };
+  }
+  const rawLeaks = Array.isArray(gateResult.leaks) ? gateResult.leaks.filter(Boolean) : [];
+  if (gateResult.verdict !== "CLEAN" || rawLeaks.length > 0) {
+    const leaks = rawLeaks.length > 0
+      ? rawLeaks
+      : [`Gate verdict was ${gateResult.verdict || "SUSPECT"}`];
+    return { passed: false, leaks };
+  }
+  return { passed: true, leaks: [] };
+}
+
+export async function runPipeline({ text, question, strictness = "standard", onStep }) {
   const vault = new Vault();
   const stats = { deviceCalls: 0, cloudCalls: 0, deviceMs: 0, cloudMs: 0, bytesUnsent: 0 };
   const t0 = performance.now();
 
   // ---- Step 1: redact, entirely on device --------------------------------
   onStep(0, "active", "reading locally, no network");
-  const chunks = chunk(text);
+
+  // Deterministic pattern pass before on-device model
+  const preRedacted = patternRedact(text, vault);
+  const chunks = chunk(preRedacted.text);
   const safeParts = [];
   let lastSource = "ON_DEVICE";
 
   for (let i = 0; i < chunks.length; i++) {
     const t = performance.now();
-    const res = await getRedactor().generateContent(redactPrompt(chunks[i]));
+    const res = await getRedactor().generateContent(redactPrompt(chunks[i], strictness));
     stats.deviceMs += performance.now() - t;
     stats.deviceCalls += 1;
     lastSource = res.response.inferenceSource || "ON_DEVICE";
@@ -66,21 +102,29 @@ export async function runPipeline({ text, question, onStep }) {
   stats.bytesUnsent = Math.max(0, text.length - safeText.length);
   onStep(0, "done", chunks.length + " chunk(s) · " + Math.round(stats.deviceMs) + " ms · " + vault.size() + " identifiers replaced");
 
-  // ---- Step 2: leak gate, on device, cannot fall back --------------------
+  // ---- Step 2: leak gate, on device, fail-closed -------------------------
   onStep(1, "active", "checking the redacted text for leftovers");
+
+  // Deterministic audit pass
+  const detLeaks = scanPatternLeaks(safeText);
+
+  // Model-based audit pass
   const tGate = performance.now();
   const gate = await getLeakChecker().generateContent(leakPrompt(safeText));
   stats.deviceMs += performance.now() - tGate;
   stats.deviceCalls += 1;
 
-  const gateResult = parseJson(gate.response.text()) || { verdict: "SUSPECT", leaks: ["unparseable gate response"] };
-  const leaks = Array.isArray(gateResult.leaks) ? gateResult.leaks.filter(Boolean) : [];
+  const rawGateResult = parseJson(gate.response.text());
+  const gateEval = evaluateGate(rawGateResult);
 
-  if (gateResult.verdict !== "CLEAN" && leaks.length > 0) {
-    onStep(1, "blocked", "blocked: " + leaks.length + " possible identifier(s) left — nothing was sent");
-    const err = new Error("Leak gate blocked the request: " + leaks.slice(0, 3).join(", "));
+  const combinedLeaks = [...new Set([...detLeaks, ...(!gateEval.passed ? gateEval.leaks : [])])];
+
+  // Fail closed if either deterministic or model gate flagged an issue
+  if (detLeaks.length > 0 || !gateEval.passed) {
+    onStep(1, "blocked", "blocked: " + combinedLeaks.length + " possible identifier(s) left — nothing was sent");
+    const err = new Error("Leak gate blocked the request: " + combinedLeaks.slice(0, 3).join(", "));
     err.blocked = true;
-    err.leaks = leaks;
+    err.leaks = combinedLeaks;
     throw err;
   }
   onStep(1, "done", "clean — cleared to leave the device");
@@ -106,7 +150,7 @@ export async function runPipeline({ text, question, onStep }) {
     safeText,
     answer: restoredAnswer,
     nextActions: restoredActions,
-    leaks,
+    leaks: [],
     stats: { ...stats, totalMs: performance.now() - t0 },
     sources: { redact: lastSource, cloud: cloudSource },
     entityCount: vault.size()

@@ -159,44 +159,34 @@ firebase deploy --only hosting,firestore:rules
 
 ```
 src/firebase.js    app, App Check, Auth, Firestore, Remote Config, AI, device check
-src/models.js      the four model instances and their inference modes
+src/models.js      cached model instances and their inference modes
 src/schema.js      one schema used as responseConstraint (device) and responseSchema (cloud)
 src/prompts.js     the three prompts — short and literal for Nano, reasoning for cloud
-src/pipeline.js    the four-step flow, chunking, the blocking leak gate
+src/patterns.js    deterministic regex layer (emails, phone, PAN, IFSC, Aadhaar, cards, IDs)
+src/pipeline.js    the four-step flow, hard-split chunking, fail-closed leak gate
 src/vault.js       placeholder → original, in memory only
 src/samples.js     three synthetic documents for the demo
-src/main.js        UI wiring and the routing panel
-extension/         Chrome Extension (Manifest V3) for ChatGPT, Claude, and Gemini
-public/            Standalone Web UI with built-in DevTools & Live Network Inspector
-server.cjs         Express Cloud Gateway & Firebase AI Logic endpoint (/api/reason)
-tests/             Automated verification test suite (26/26 unit & integration tests)
+src/main.js        UI wiring, Firestore redacted document persistence, routing panel
+tests/             Automated verification test suite (36 unit tests)
 ```
-
-## 🧩 Chrome Extension (Manifest V3)
-
-The repository includes a ready-to-load Chrome Extension under [`extension/`](extension):
-
-1. Go to `chrome://extensions/` in Chrome.
-2. Toggle **Developer mode** to ON.
-3. Click **Load unpacked** and select the `extension/` folder.
-4. **Features:**
-   - **In-Page Floating Shield:** Automatically injects a privacy firewall shield on `chatgpt.com`, `claude.ai`, and `gemini.google.com` to sanitize inputs before submission.
-   - **Popup Clipboard Firewall:** One-click clipboard sanitization and one-click answer re-hydration.
 
 ## 🧪 Automated Verification Suite
 
-Run the 26-point automated test suite anytime:
+Run the 36-point automated test suite anytime:
 
 ```bash
 npm test
 ```
 
 Verifies:
-- **HIPAA Safe Harbor PHI Sanitization:** Names, doctors, MRNs, DOBs, phone numbers, and emails purged; clinical metrics (blood sugar, HbA1c) preserved.
-- **Executive Contract & Financial Redaction:** Names, companies, base salaries ($385k), bonuses ($120k), SSNs, bank accounts purged; duration preserved.
-- **Local Re-hydration Roundtrip Fidelity:** 100% substitution accuracy restoring real names into cloud answers.
-- **Zero-PII Leak Audit:** Cryptographic verification that zero vault entities appear on the network wire.
+- **Document Chunking & Hard-Splitting:** Short documents, paragraph merging, and hard-splitting of oversized paragraphs (> 3500 chars) to prevent silent model truncation.
+- **Robust JSON Extraction:** Clean recovery of structured model output even when wrapped in markdown codeblocks or conversational preambles.
+- **Fail-Closed Leak Gate:** Rejection of non-CLEAN verdicts, rejection of non-empty leak arrays, and fallback blocking on missing or malformed responses.
+- **In-Memory Vault Isolation & Roundtrip Fidelity:** Token absorption, strict longest-token substitution precedence (preventing `[[PERSON_10]]` collisions with `[[PERSON_1]]`), and restoration.
+- **Deterministic Pattern Layer:** Pre-model redaction and post-redaction audit of emails, Indian phone numbers, PAN, IFSC, Aadhaar-style, card-style, and 11+ digit ID runs.
+- **Conservative Preservation:** Verification that legitimate clinical vitals (`182 mg/dL`), lab values (`HbA1c 8.4%`), dates (`03-Nov-2026`), and currency amounts (`1,05,000`) are preserved.
 
+*(Note: Model inference quality requires a physical Chrome 139+ browser with Gemini Nano enabled).*
 
 ## Design notes worth defending in the write-up
 
@@ -223,6 +213,4 @@ PDFs), saved-document history in Firestore, and the Android client.
 
 ## License
 
-MIT — see `LICENSE`. The hackathon prefers Apache-2.0; swap the file for
-`https://www.apache.org/licenses/LICENSE-2.0.txt` if you want that instead, and
-update the `license` field in `package.json`.
+Apache-2.0 — see `LICENSE`.

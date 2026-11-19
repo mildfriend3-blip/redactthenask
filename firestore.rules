@@ -6,7 +6,13 @@ service cloud.firestore {
     // placeholders back to real values lives in the browser tab's memory
     // and is never written here — that is the whole point of the product.
     match /users/{uid}/redactedDocs/{docId} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['safeText', 'entityCount', 'redactSource', 'createdAt'])
+        && request.resource.data.safeText is string
+        && request.resource.data.safeText.size() > 0
+        && request.resource.data.safeText.size() <= 200000;
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
     }
 
     match /users/{uid}/policies/{docId} {

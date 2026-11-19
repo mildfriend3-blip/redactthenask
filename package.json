@@ -3,22 +3,21 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Ask anything about a sensitive document. Leak nothing. Hybrid on-device + cloud inference with Firebase AI Logic (Web App & Chrome Extension).",
+  "description": "Ask anything about a sensitive document. Leak nothing. Hybrid on-device + cloud inference with Firebase AI Logic.",
   "license": "Apache-2.0",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "server": "node server.cjs",
     "test": "node tests/test-pipeline.js",
     "deploy": "npm run build && firebase deploy --only hosting,firestore:rules",
     "verify": "node scripts/verify-setup.mjs"
   },
   "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "express": "^4.21.2",
     "firebase": "^13.0.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.7"
   },
   "devDependencies": {
     "vite": "^6.0.0"

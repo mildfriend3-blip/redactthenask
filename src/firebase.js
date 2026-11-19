@@ -8,13 +8,15 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getRemoteConfig, fetchAndActivate, getValue } from "firebase/remote-config";
 
+const env = (typeof import.meta !== "undefined" && import.meta.env) || {};
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FB_API_KEY,
-  authDomain: import.meta.env.VITE_FB_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FB_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FB_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FB_SENDER_ID,
-  appId: import.meta.env.VITE_FB_APP_ID
+  apiKey: env.VITE_FB_API_KEY || "AIzaSyDummyKeyForTestingAndOffline123",
+  authDomain: env.VITE_FB_AUTH_DOMAIN || "localhost",
+  projectId: env.VITE_FB_PROJECT_ID || "redactthenask-local",
+  storageBucket: env.VITE_FB_STORAGE_BUCKET || "redactthenask-local.appspot.com",
+  messagingSenderId: env.VITE_FB_SENDER_ID || "1234567890",
+  appId: env.VITE_FB_APP_ID || "1:1234567890:web:abcdef123456"
 };
 
 export const app = initializeApp(firebaseConfig);
@@ -26,7 +28,7 @@ export const auth = getAuth(app);
 // into the browser console once:  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
 try {
   initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider(import.meta.env.VITE_RECAPTCHA_SITE_KEY || ""),
+    provider: new ReCaptchaV3Provider(env.VITE_RECAPTCHA_SITE_KEY || ""),
     isTokenAutoRefreshEnabled: true
   });
 } catch (err) {
@@ -38,14 +40,22 @@ export const ai = getAI(app, { backend: new GoogleAIBackend() });
 // Remote Config lets us retune the redaction policy and pick the cloud model
 // without shipping a new build. Defaults matter: the app must behave
 // correctly with the network down.
-const rc = getRemoteConfig(app);
-rc.settings.minimumFetchIntervalMillis = 60 * 60 * 1000;
-rc.defaultConfig = {
-  cloud_model: "gemini-3.5-flash-lite",
-  redact_strictness: "standard"
-};
+let rc = null;
+try {
+  rc = getRemoteConfig(app);
+  rc.settings.minimumFetchIntervalMillis = 60 * 60 * 1000;
+  rc.defaultConfig = {
+    cloud_model: "gemini-3.5-flash-lite",
+    redact_strictness: "standard"
+  };
+} catch (err) {
+  // Remote Config requires a browser or indexedDB environment; fallback cleanly
+}
 
 export async function loadRemoteConfig() {
+  if (!rc) {
+    return { cloudModel: "gemini-3.5-flash-lite", strictness: "standard" };
+  }
   try {
     await fetchAndActivate(rc);
   } catch (err) {
