@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Ask anything about a sensitive document. Leak nothing. Hybrid on-device + cloud inference with Firebase AI Logic.",
-  "license": "Apache-2.0",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

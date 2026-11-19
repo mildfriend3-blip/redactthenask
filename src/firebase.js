@@ -2,7 +2,7 @@
 // token or a failed Remote Config fetch must not take the app down, because
 // the privacy-critical path (redaction) runs locally and always works.
 import { initializeApp } from "firebase/app";
-import { getAI, GoogleAIBackend, InferenceMode } from "firebase/ai";
+import { getAI, GoogleAIBackend, InferenceMode, InferenceSource } from "firebase/ai";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
@@ -99,23 +99,23 @@ export async function deviceStatus() {
   }
 }
 
-// The exact call shape for warming the on-device model has moved between
-// SDK versions, so support both. Must be called from a user gesture.
+let deviceModelInitialized = false;
+
+// The on-device model must be warmed from a user gesture.
 export async function ensureDeviceModel() {
+  if (deviceModelInitialized) return true;
   try {
-    const mod = await import("firebase/ai");
-    if (typeof ai.initializeDeviceModel === "function") {
-      await ai.initializeDeviceModel();
-      return true;
+    const { getRedactor } = await import("./models.js");
+    const redactor = getRedactor();
+    if (typeof redactor.initializeDeviceModel === "function") {
+      await redactor.initializeDeviceModel((p) => { /* 0..1 */ });
     }
-    if (typeof mod.initializeDeviceModel === "function") {
-      await mod.initializeDeviceModel(ai);
-      return true;
-    }
+    deviceModelInitialized = true;
+    return true;
   } catch (err) {
     console.warn("[on-device] initialisation skipped:", err.message);
+    return false;
   }
-  return false;
 }
 
-export { InferenceMode };
+export { InferenceMode, InferenceSource };

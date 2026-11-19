@@ -50,4 +50,6 @@ jobs:
           npm run build
 
       - name: Deploy
-        run: npx --yes firebase-tools deploy --only hosting,firestore:rules --project "${{ secrets.VITE_FB_PROJECT_ID }}" --token "${{ secrets.FIREBASE_TOKEN }}"
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: npx --yes firebase-tools@13 deploy --only hosting,firestore:rules --project "${{ secrets.VITE_FB_PROJECT_ID }}"

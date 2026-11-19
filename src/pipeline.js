@@ -1,5 +1,6 @@
 // The pipeline is the product. Four steps, three of which never touch the
 // network, and one gate that can stop the only step that does.
+import { InferenceSource } from "firebase/ai";
 import { getRedactor, getLeakChecker, getAnalyst } from "./models.js";
 import { Vault } from "./vault.js";
 import { redactPrompt, leakPrompt, analystPrompt } from "./prompts.js";
@@ -79,14 +80,14 @@ export async function runPipeline({ text, question, strictness = "standard", onS
   const preRedacted = patternRedact(text, vault);
   const chunks = chunk(preRedacted.text);
   const safeParts = [];
-  let lastSource = "ON_DEVICE";
+  let lastSource = InferenceSource.ON_DEVICE;
 
   for (let i = 0; i < chunks.length; i++) {
     const t = performance.now();
     const res = await getRedactor().generateContent(redactPrompt(chunks[i], strictness));
     stats.deviceMs += performance.now() - t;
     stats.deviceCalls += 1;
-    lastSource = res.response.inferenceSource || "ON_DEVICE";
+    lastSource = res.response.inferenceSource || InferenceSource.ON_DEVICE;
 
     const parsed = parseJson(res.response.text());
     if (!parsed || typeof parsed.redacted_text !== "string") {
@@ -135,7 +136,7 @@ export async function runPipeline({ text, question, strictness = "standard", onS
   const res = await getAnalyst().generateContent(analystPrompt(safeText, question));
   stats.cloudMs += performance.now() - tCloud;
   stats.cloudCalls += 1;
-  const cloudSource = res.response.inferenceSource || "IN_CLOUD";
+  const cloudSource = res.response.inferenceSource || InferenceSource.IN_CLOUD;
 
   const answerJson = parseJson(res.response.text()) || { answer: res.response.text(), next_actions: [] };
   onStep(2, "done", Math.round(stats.cloudMs) + " ms · " + safeText.length + " chars sent");

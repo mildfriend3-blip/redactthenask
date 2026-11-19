@@ -1,4 +1,4 @@
-import { deviceStatus, ensureDeviceModel, ensureSignedIn, db, auth } from "./firebase.js";
+import { deviceStatus, ensureDeviceModel, ensureSignedIn, db, auth, InferenceSource } from "./firebase.js";
 import { refreshModels } from "./models.js";
 import { runPipeline } from "./pipeline.js";
 import { SAMPLES } from "./samples.js";
@@ -150,8 +150,8 @@ runBtn.addEventListener("click", async () => {
       answerEl.appendChild(document.createElement("br"));
       answerEl.appendChild(ul);
     }
-    answerSource.textContent = result.sources.cloud === "ON_DEVICE" ? "on device" : "cloud";
-    answerSource.className = "badge ghost" + (result.sources.cloud === "ON_DEVICE" ? "" : " cloud");
+    answerSource.textContent = result.sources.cloud === InferenceSource.ON_DEVICE ? "on device" : "cloud";
+    answerSource.className = "badge ghost" + (result.sources.cloud === InferenceSource.ON_DEVICE ? "" : " cloud");
     answerCard.hidden = false;
 
     $("stat-device").textContent = result.stats.deviceCalls;
